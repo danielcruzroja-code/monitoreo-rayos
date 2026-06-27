@@ -12,7 +12,7 @@ def procesar_glm():
     s3 = boto3.client('s3', config=Config(signature_version=UNSIGNED))
     bucket_name = 'noaa-goes16'
     
-    # Obtener la fecha actual para buscar en la ruta correcta
+    # Obtener la fecha actual en UTC
     ahora = datetime.utcnow()
     year = ahora.strftime('%Y')
     day_of_year = ahora.strftime('%j')
@@ -27,34 +27,30 @@ def procesar_glm():
             print("No se encontraron archivos recientes.")
             return
         
-        # Tomar el archivo más reciente
+        # Tomar el archivo más reciente (el satélite genera uno nuevo cada 20 segundos)
         archivos = sorted(response['Contents'], key=lambda x: x['LastModified'])
         ultimo_archivo = archivos[-1]['Key']
         nombre_local = "temporal_glm.nc"
         
-        print(f"Descargando: {ultimo_archivo}")
+        print(f"Descargando datos de América: {ultimo_archivo}")
         s3.download_file(bucket_name, ultimo_archivo, nombre_local)
         
-        # Leer el archivo NetCDF del satélite
+        # Leer el archivo NetCDF
         ds = nc.Dataset(nombre_local)
         
-        # Extraer latitudes, longitudes y energías de los rayos
+        # Extraer latitudes y longitudes de todos los rayos
         lats = ds.variables['flash_lat'][:]
         lons = ds.variables['flash_lon'][:]
         
         rayos = []
         for i in range(len(lats)):
-            lat_val = float(lats[i])
-            lon_val = float(lons[i])
-            
-            # Filtrar por coordenadas aproximadas de México / Jalisco para optimizar espacio
-            if 14.0 <= lat_val <= 33.0 and -118.0 <= lon_val <= -86.0:
-                rayos.append({
-                    "fecha": ahora.isoformat() + "Z",
-                    "lat": round(lat_val, 4),
-                    "lon": round(lon_val, 4),
-                    "tipo": "total-sat"  # El sensor óptico registra actividad total
-                })
+            # Al remover el filtro geográfico, abarcamos toda la cobertura del GOES-16 (América completa)
+            rayos.append({
+                "fecha": ahora.isoformat() + "Z",
+                "lat": round(float(lats[i]), 4),
+                "lon": round(float(lons[i]), 4),
+                "tipo": "total-sat"
+            })
         
         ds.close()
         if os.path.exists(nombre_local):
@@ -63,7 +59,7 @@ def procesar_glm():
         # Guardar en archivo JSON
         with open('rayos.json', 'w') as f:
             json.dump(rayos, f, indent=2)
-        print(f"Procesados {len(rayos)} rayos exitosamente.")
+        print(f"Procesados {len(rayos)} rayos en toda América exitosamente.")
         
     except Exception as e:
         print(f"Error procesando satélite: {e}")
