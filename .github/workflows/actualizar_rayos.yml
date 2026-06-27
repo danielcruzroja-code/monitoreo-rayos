@@ -1,9 +1,11 @@
-
 name: Actualizar Datos de Rayos GOES
+
 on:
+  push:
+    branches: [ "main" ]
   schedule:
-    - cron: '*/10 * * * *' # Se ejecuta cada 10 minutos
-  workflow_dispatch: # Permite ejecutarlo manualmente desde la pestaña Actions
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -22,7 +24,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requisitos.txt
 
-    - name: Ejecutar script del Satélite
+    - name: Ejecutar script del Satelite
       run: python script_satelite.py
 
     - name: Hacer Commit y Push del JSON actualizado
@@ -30,5 +32,5 @@ jobs:
         git config --global user.name "GitHub Action"
         git config --global user.email "actions@github.com"
         git add rayos.json
-        git commit -m "Actualización automática de rayos en tiempo real" || exit 0
+        git commit -m "Actualizacion automatica de rayos" || exit 0
         git push
