@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main" ]
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '* * * * *' # SE EJECUTA CADA 1 MINUTO EXACTO
   workflow_dispatch:
 
 jobs:
@@ -32,5 +32,5 @@ jobs:
         git config --global user.name "GitHub Action"
         git config --global user.email "actions@github.com"
         git add rayos.json
-        git commit -m "Actualizacion automatica de rayos" || exit 0
+        git commit -m "Actualizacion de rayos en tiempo real (1 min)" || exit 0
         git push
